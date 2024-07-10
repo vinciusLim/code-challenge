@@ -1,0 +1,95 @@
+version: 1
+default_environment: dev
+project_id: c4d53e03-d088-448a-9ac4-28cc9cc74c32
+environments:
+- name: dev
+- name: staging
+- name: prod
+plugins:
+  extractors:
+  - name: tap-csv-tipo1
+    inherit_from: tap-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+    config:
+      files:
+      - entity: order_details
+        path: data
+        keys:
+        - order_id
+  - name: tap-csv-tipo2
+    inherit_from: tap-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+    config:
+      files:
+      - entity: order_details
+        path: dados/csv/2024-07-10/dados.csv
+        keys: [order_id, product_id]
+      - entity: categories
+        path: dados/postgres/public-categories/2024-07-10/dados.csv
+        keys: [category_id]
+      - entity: customers
+        path: dados/postgres/public-customers/2024-07-10/dados.csv
+        keys: [customer_id]
+      - entity: employee_territories
+        path: dados/postgres/public-employee_territories/2024-07-10/dados.csv
+        keys: [employee_id, territory_id]
+      - entity: employees
+        path: dados/postgres/public-employees/2024-07-10/dados.csv
+        keys: [employee_id]
+      - entity: orders
+        path: dados/postgres/public-orders/2024-07-10/dados.csv
+        keys: [order_id]
+      - entity: products
+        path: dados/postgres/public-products/2024-07-10/dados.csv
+        keys: [product_id]
+      - entity: region
+        path: dados/postgres/public-region/2024-07-10/dados.csv
+        keys: [region_id]
+      - entity: shippers
+        path: dados/postgres/public-shippers/2024-07-10/dados.csv
+        keys: [shipper_id]
+      - entity: suppliers
+        path: dados/postgres/public-suppliers/2024-07-10/dados.csv
+        keys: [supplier_id]
+      - entity: territories
+        path: dados/postgres/public-territories/2024-07-10/dados.csv
+        keys: [territory_id]
+      - entity: us_states
+        path: dados/postgres/public-us_states/2024-07-10/dados.csv
+        keys: [state_id]
+  - name: tap-postgres-tipo1
+    inherit_from: tap-postgres
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-postgres.git
+    config:
+      sqlalchemy_url: postgresql://northwind_user:thewindisblowing@localhost:5433/northwind
+      filter_schemas: [public]
+  loaders:
+  - name: target-csv-tipo1
+    inherit_from: target-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/target-csv.git
+    config:
+      file_naming_scheme: dados/csv/{datestamp}/dados.csv
+  - name: target-csv-tipo2
+    inherit_from: target-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/target-csv.git
+    config:
+      validate_records: false
+      add_record_metadata: false
+      file_naming_scheme: dados/postgres/{stream_name}/{datestamp}/dados.csv
+      default_target_schema: public
+      default_target_table: dados_table
+  - name: target-postgres-tipo1
+    inherit_from: target-postgres
+    variant: meltanolabs
+    pip_url: meltanolabs-target-postgres
+    config:
+      sqlalchemy_url: postgresql://postgres:1234@localhost:5432/banco_destino
+      default_target_schema: public
+      default_target_table: dados_table
+      add_record_metadata: false
+      activate_version: false
