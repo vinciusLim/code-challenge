@@ -1,84 +1,169 @@
-# Indicium Tech Code Challenge
+# Documentação do Desafio de Código Técnico da Indicium
 
-Code challenge for Software Developer with focus in data projects.
+## Configuração do Banco de Dados
 
+### Banco de dados Northwind
 
-## Context
+Para configurar o banco de dados Northwind, execute o comando `docker compose up` para inicializar o arquivo northwind.sql e o Docker. Para visualizar e gerenciar o banco de dados, utilize o pgAdmin. O banco contém um total de 13 tabelas.
 
-At Indicium we have many projects where we develop the whole data pipeline for our client, from extracting data from many data sources to loading this data at its final destination, with this final destination varying from a data warehouse for a Business Intelligency tool to an api for integrating with third party systems.
+![Imagem do PostgreSQL](imagens/image.png)
 
-As a software developer with focus in data projects your mission is to plan, develop, deploy, and maintain a data pipeline.
+## Iniciando o Projeto de carregador de dados com Meltano
 
+Para começar um projeto Meltano, utilize o comando `meltano init meu_projeto`. O projeto inclui um processo ETL completo, que envolve extração de dados de dois fontes externas (um CSV e um banco PostgreSQL local) e carregamento desses dados em um banco interno denominado "banco_destino".
 
-## The Challenge
+## Transferência de CSV Externo para CSV Local
 
-We are going to provide 2 data sources, a PostgreSQL database and a CSV file.
+O primeiro passo envolve a consolidação de arquivos CSV de detalhes de pedidos locais em um único arquivo CSV.
 
-The CSV file represents details of orders from an ecommerce system.
+### Comando
 
-The database provided is a sample database provided by microsoft for education purposes called northwind, the only difference is that the **order_detail** table does not exists in this database you are beeing provided with. This order_details table is represented by the CSV file we provide.
-
-Schema of the original Northwind Database: 
-
-![image](https://user-images.githubusercontent.com/49417424/105997621-9666b980-608a-11eb-86fd-db6b44ece02a.png)
-
-Your challenge is to build a pipeline that extracts the data everyday from both sources and write the data first to local disk, and second to a PostgreSQL database. For this challenge, the CSV file and the database will be static, but in any real world project, both data sources would be changing constantly.
-
-Its important that all writing steps (writing data from inputs to local filesystem and writing data from local filesystem to PostgreSQL database) are isolated from each other, you shoud be able to run any step without executing the others.
-
-For the first step, where you write data to local disk, you should write one file for each table. This pipeline will run everyday, so there should be a separation in the file paths you will create for each source(CSV or Postgres), table and execution day combination, e.g.:
-
-```
-/data/postgres/{table}/2024-01-01/file.format
-/data/postgres/{table}/2024-01-02/file.format
-/data/csv/2024-01-02/file.format
+```bash
+meltano el tap-csv-tipo1 target-csv-tipo1
 ```
 
-You are free to chose the naming and the format of the file you are going to save.
+### Configurações
 
-At step 2, you should load the data from the local filesystem, which you have created, to the final database.
+#### `tap-csv-tipo1`
 
-The final goal is to be able to run a query that shows the orders and its details. The Orders are placed in a table called **orders** at the postgres Northwind database. The details are placed at the csv file provided, and each line has an **order_id** field pointing the **orders** table.
+```yaml
+- name: tap-csv-tipo1
+  inherit_from: tap-csv
+  variant: meltanolabs
+  pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+  config:
+    files:
+      - entity: order_details
+        path: ../data
+        keys:
+          - order_id
+```
 
-## Solution Diagram
+#### `target-csv-tipo1`
 
-As Indicium uses some standard tools, the challenge was designed to be done using some of these tools.
+```yaml
+- name: target-csv-tipo1
+  inherit_from: target-csv
+  variant: meltanolabs
+  pip_url: git+https://github.com/MeltanoLabs/target-csv.git
+  config:
+    file_naming_scheme: data/csv/{datestamp}/dados.csv
+```
 
-The following tools should be used to solve this challenge.
+## Transferência de Banco de Dados para CSV Local
 
-Scheduler:
-- [Airflow](https://airflow.apache.org/docs/apache-airflow/stable/installation/index.html)
+O segundo passo consiste na extração de dados de um banco de dados local e sua exportação para arquivos CSV em um diretório local.
 
-Data Loader:
-- [Embulk](https://www.embulk.org) (Java Based)
-**OR**
-- [Meltano](https://docs.meltano.com/?_gl=1*1nu14zf*_gcl_au*MTg2OTE2NDQ4Mi4xNzA2MDM5OTAz) (Python Based)
+### Comando
 
-Database:
-- [PostgreSQL](https://www.postgresql.org/docs/15/index.html)
+```bash
+meltano el tap-postgres-tipo1 target-csv-tipo2
+```
 
-The solution should be based on the diagrams below:
-![image](docs/diagrama_embulk_meltano.jpg)
+### Configurações
 
+#### `tap-postgres-tipo1`
 
-### Requirements
+```yaml
+- name: tap-postgres-tipo1
+  inherit_from: tap-postgres
+  variant: meltanolabs
+  pip_url: git+https://github.com/MeltanoLabs/tap-postgres.git
+  config:
+    sqlalchemy_url: postgresql://northwind_user:thewindisblowing@localhost:5433/northwind
+    filter_schemas: [public]
+```
 
-- You **must** use the tools described above to complete the challenge.
-- All tasks should be idempotent, you should be able to run the pipeline everyday and, in this case where the data is static, the output shold be the same.
-- Step 2 depends on both tasks of step 1, so you should not be able to run step 2 for a day if the tasks from step 1 did not succeed.
-- You should extract all the tables from the source database, it does not matter that you will not use most of them for the final step.
-- You should be able to tell where the pipeline failed clearly, so you know from which step you should rerun the pipeline.
-- You have to provide clear instructions on how to run the whole pipeline. The easier the better.
-- You must provide evidence that the process has been completed successfully, i.e. you must provide a csv or json with the result of the query described above.
-- You should assume that it will run for different days, everyday.
-- Your pipeline should be prepared to run for past days, meaning you should be able to pass an argument to the pipeline with a day from the past, and it should reprocess the data for that day. Since the data for this challenge is static, the only difference for each day of execution will be the output paths.
+#### `target-csv-tipo2`
 
-### Things that Matters
+```yaml
+- name: target-csv-tipo2
+  inherit_from: target-csv
+  variant: meltanolabs
+  pip_url: git+https://github.com/MeltanoLabs/target-csv.git
+  config:
+    validate_records: false
+    add_record_metadata: false
+    file_naming_scheme: data/postgres/{stream_name}/{datestamp}/dados.csv
+    default_target_schema: public
+    default_target_table: dados_table
+```
 
-- Clean and organized code.
-- Good decisions at which step (which database, which file format..) and good arguments to back those decisions up.
-- The aim of the challenge is not only to assess technical knowledge in the area, but also the ability to search for information and use it to solve problems with tools that are not necessarily known to the candidate.
-- Point and click tools are not allowed.
+## Transferência de CSV Local para Banco de Dados Destino
 
+O último passo envolve a importação de arquivos CSV locais para o banco de dados "banco_destino".
 
-Thank you for participating!
+### Comando
+
+```bash
+meltano el tap-csv-tipo2 target-postgres-tipo1
+```
+
+### Configurações
+
+#### `tap-csv-tipo2`
+
+```yaml
+- name: tap-csv-tipo2
+  inherit_from: tap-csv
+  variant: meltanolabs
+  pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+  config:
+    files:
+      - entity: order_details
+        path: data/csv/2024-07-11/dados.csv
+        keys: [order_id, product_id]
+      - entity: categories
+        path: data/postgres/public-categories/2024-07-11/dados.csv
+        keys: [category_id]
+      ... (outras entidades)
+```
+
+#### `target-postgres-tipo1`
+
+```yaml
+- name: target-postgres-tipo1
+  inherit_from: target-postgres
+  variant: meltanolabs
+  pip_url: meltanolabs-target-postgres
+  config:
+    sqlalchemy_url: postgresql://postgres:1234@localhost:5432/banco_destino
+    default_target_schema: public
+    default_target_table: dados_table
+    add_record_metadata: false
+    activate_version: false
+```
+
+## Agendador de fluxo com o Airflow
+
+Utilizando Airflow, é possível agendar a execução dos jobs `tap_csv_to_target_csv_task` e `tap_postgres_to_target_csv_task`, responsáveis por carregar dados externos para o local. Após a conclusão desses jobs, o job `tap_csv_to_target_postgres_task` carrega esses dados locais para o banco de dados "banco_destino". O Airflow roda localmente, registrando as execuções e a qualidade dos processos, além de exibir um gráfico que mostra a ordem de execução dos jobs.
+
+![Gráfico de Qualidade do Airflow](imagens/image%20copy.png)
+![Gráfico de Ordem de Execução do Airflow](imagens/image%20copy%202.png)
+
+## Consulta SQL
+
+A consulta SQL abaixo permite visualizar pedidos com valor bruto superior a 2000 ordenado pelo preço do menor para o maior, salvando o resultado na pasta "data":
+
+```sql
+SELECT *
+FROM (
+    SELECT
+        o.order_id,
+        od.product_id,
+        (CAST(od.unit_price AS NUMERIC) * CAST(od.quantity AS NUMERIC)) AS preco_total_bruto
+    FROM
+        orders AS o
+    LEFT JOIN
+        order_details AS od
+    ON
+        o.order_id = od.order_id
+) AS subquery
+WHERE
+    preco_total_bruto > 2000
+ORDER BY preco_total_bruto asc;
+```
+
+## Conclusão
+
+A documentação do Desafio de Código Técnico da Indicium oferece uma visão mais completa e compreensível do processo de ETL. As informações detalhadas, os exemplos e as ilustrações facilitam o uso do código e a execução do desafio, utlizando o carregador de dados Meltano e o agendador de fluxo Airflow.
