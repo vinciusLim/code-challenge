@@ -1,25 +1,28 @@
 # Documentação do Desafio de Código Técnico da Indicium
 
-## Configuração do Banco de Dados
+### Introdução
 
-### Banco de dados Northwind
+O projeto abrange todas as etapas de um processo ETL (Extração, Transformação e Carga), desde a configuração inicial do banco de dados Northwind utilizando Docker para executar arquivos .sql, até o agendamento e monitoramento das tarefas de carregamento de dados, com Meltano como ferramenta de ETL e Airflow para o agendamento das tarefas.
 
-Para configurar o banco de dados Northwind, execute o comando `docker compose up` para inicializar o arquivo northwind.sql e o Docker. Para visualizar e gerenciar o banco de dados, utilize o pgAdmin. O banco contém um total de 13 tabelas.
+### Configuração do Banco de dados "Northwind"
+
+O banco de dados Northwind pode ser configurado  usando o Docker. Inicie o Docker com o comando `docker-compose up` e o banco de dados será carregado automaticamente a partir do arquivo `northwind.sql`. Para gerenciar o banco de dados, utilize o pgAdmin, acessível em um navegador web na porta 5432, com as credenciais padrão `postgres` e `password`. O banco de dados possui 13 tabelas.
+
 
 ![Imagem do PostgreSQL](imagens/image.png)
 
-## Iniciando o Projeto de carregador de dados com Meltano
+## Iniciando o Projeto de Carregamento de Dados com Meltano
 
-Para começar um projeto Meltano, utilize o comando `meltano init meu_projeto`. O projeto inclui um processo ETL completo, que envolve extração de dados de dois fontes externas (um CSV e um banco PostgreSQL local) e carregamento desses dados em um banco interno denominado "banco_destino".
+O Meltano é uma ferramenta poderosa para extrair, transformar e carregar dados. Para iniciar um projeto Meltano, utilize o comando meltano init meu_projeto. O projeto inclui um processo ETL completo, que envolve a extração de dados de duas fontes externas (um arquivo CSV e um banco de dados PostgreSQL) e o carregamento desses dados em um banco de dados interno denominado "banco_destino". Os plugins do tipo tap capturam os dados de determinada fonte, enquanto os plugins do tipo target enviam os dados para o destino. As instruções do projeto meltano ficam salvas no arquivo `meltano.yml`.
 
 ## Transferência de CSV Externo para CSV Local
 
-O primeiro passo envolve a consolidação de arquivos CSV de detalhes de pedidos locais em um único arquivo CSV.
+O primeiro passo envolve a consolidação de arquivos CSV de detalhes de pedidos locais em um único arquivo CSV. Para isso, é necessário criar um job, que será executado pelo Airflow, utilizando os plugins `tap-csv-tipo1` e `target-csv-tipo1`.
 
 ### Comando
 
 ```bash
-meltano el tap-csv-tipo1 target-csv-tipo1
+meltano job add tap-csv-to-target-csv --tasks "tap-csv-tipo1 target-csv-tipo1"
 ```
 
 ### Configurações
@@ -52,12 +55,12 @@ meltano el tap-csv-tipo1 target-csv-tipo1
 
 ## Transferência de Banco de Dados para CSV Local
 
-O segundo passo consiste na extração de dados de um banco de dados local e sua exportação para arquivos CSV em um diretório local.
+O segundo passo consiste na extração de dados de um banco de dados local e sua exportação para arquivos CSV em um diretório local. Este processo utiliza os plugins `tap-postgres-tipo1` e `target-csv-tipo2`.
 
 ### Comando
 
 ```bash
-meltano el tap-postgres-tipo1 target-csv-tipo2
+meltano job add tap-postgres-to-target-csv --tasks "tap-postgres-tipo1 target-csv-tipo2"
 ```
 
 ### Configurações
@@ -91,12 +94,12 @@ meltano el tap-postgres-tipo1 target-csv-tipo2
 
 ## Transferência de CSV Local para Banco de Dados Destino
 
-O último passo envolve a importação de arquivos CSV locais para o banco de dados "banco_destino".
+O último passo envolve a importação de arquivos CSV locais para o banco de dados "banco_destino". Para isso, são utilizados os plugins `tap-csv-tipo2` e `target-postgres-tipo1`.
 
 ### Comando
 
 ```bash
-meltano el tap-csv-tipo2 target-postgres-tipo1
+meltano job add tap-csv-to-target-postgres --tasks "tap-csv-tipo2 target-postgres-tipo1"
 ```
 
 ### Configurações
@@ -136,7 +139,7 @@ meltano el tap-csv-tipo2 target-postgres-tipo1
 
 ## Agendador de fluxo com o Airflow
 
-Utilizando Airflow, é possível agendar a execução dos jobs `tap_csv_to_target_csv_task` e `tap_postgres_to_target_csv_task`, responsáveis por carregar dados externos para o local. Após a conclusão desses jobs, o job `tap_csv_to_target_postgres_task` carrega esses dados locais para o banco de dados "banco_destino". O Airflow roda localmente, registrando as execuções e a qualidade dos processos, além de exibir um gráfico que mostra a ordem de execução dos jobs.
+Utilizando Airflow, é possível agendar a execução dos jobs tap_csv_to_target_csv_task e tap_postgres_to_target_csv_task simultaneamente, responsáveis por carregar dados externos para o diretório local do projeto Meltano (/meu_meltano/data/). Após a conclusão desses jobs, o job tap_csv_to_target_postgres_task carrega esses dados locais para o banco de dados "banco_destino". O Airflow roda localmente, registrando as execuções e a qualidade dos processos, além de exibir um gráfico que mostra a ordem de execução dos jobs e se eles forem executados corretamente.
 
 ![Gráfico de Qualidade do Airflow](imagens/image%20copy.png)
 ![Gráfico de Ordem de Execução do Airflow](imagens/image%20copy%202.png)
