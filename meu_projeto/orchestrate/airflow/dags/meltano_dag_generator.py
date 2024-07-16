@@ -15,7 +15,7 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
-dag = DAG("meltano_jobs", default_args=default_args, schedule_interval="@daily")
+dag = DAG("meltano_jobs", default_args=default_args, schedule_interval="* * * * *")
 
 tap_csv_to_target_csv = BashOperator(
     task_id='tap_csv_to_target_csv',

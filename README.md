@@ -139,7 +139,7 @@ meltano job add tap-csv-to-target-postgres --tasks "tap-csv-tipo2 target-postgre
 
 ## Agendador de fluxo com o Airflow
 
-Utilizando Airflow, é possível agendar a execução dos jobs tap_csv_to_target_csv_task e tap_postgres_to_target_csv_task simultaneamente, responsáveis por carregar dados externos para o diretório local do projeto Meltano (/meu_meltano/data/). Após a conclusão desses jobs, o job tap_csv_to_target_postgres_task carrega esses dados locais para o banco de dados "banco_destino". O Airflow roda localmente, registrando as execuções e a qualidade dos processos, além de exibir um gráfico que mostra a ordem de execução dos jobs e se eles forem executados corretamente.
+Utilizando Airflow, é possível agendar a execução dos jobs tap_csv_to_target_csv_task e tap_postgres_to_target_csv_task simultaneamente, responsáveis por carregar dados externos para o diretório local  (/data). Após a conclusão desses jobs, o job tap_csv_to_target_postgres_task carrega esses dados locais para o banco de dados "banco_destino". O Airflow roda localmente, registrando as execuções e a qualidade dos processos, além de exibir um gráfico que mostra a ordem de execução dos jobs e se eles forem executados corretamente.
 
 ![Gráfico de Qualidade do Airflow](imagens/image%20copy.png)
 ![Gráfico de Ordem de Execução do Airflow](imagens/image%20copy%202.png)

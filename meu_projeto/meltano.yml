@@ -24,40 +24,40 @@ plugins:
     config:
       files:
       - entity: order_details
-        path: data/csv/2024-07-16/dados.csv
+        path: ../data/csv/2024-07-16/dados.csv
         keys: [order_id, product_id]
       - entity: categories
-        path: data/postgres/public-categories/2024-07-16/dados.csv
+        path: ../data/postgres/public-categories/2024-07-16/dados.csv
         keys: [category_id]
       - entity: customers
-        path: data/postgres/public-customers/2024-07-16/dados.csv
+        path: ../data/postgres/public-customers/2024-07-16/dados.csv
         keys: [customer_id]
       - entity: employee_territories
-        path: data/postgres/public-employee_territories/2024-07-16/dados.csv
+        path: ../data/postgres/public-employee_territories/2024-07-16/dados.csv
         keys: [employee_id, territory_id]
       - entity: employees
-        path: data/postgres/public-employees/2024-07-16/dados.csv
+        path: ../data/postgres/public-employees/2024-07-16/dados.csv
         keys: [employee_id]
       - entity: orders
-        path: data/postgres/public-orders/2024-07-16/dados.csv
+        path: ../data/postgres/public-orders/2024-07-16/dados.csv
         keys: [order_id]
       - entity: products
-        path: data/postgres/public-products/2024-07-16/dados.csv
+        path: ../data/postgres/public-products/2024-07-16/dados.csv
         keys: [product_id]
       - entity: region
-        path: data/postgres/public-region/2024-07-16/dados.csv
+        path: ../data/postgres/public-region/2024-07-16/dados.csv
         keys: [region_id]
       - entity: shippers
-        path: data/postgres/public-shippers/2024-07-16/dados.csv
+        path: ../data/postgres/public-shippers/2024-07-16/dados.csv
         keys: [shipper_id]
       - entity: suppliers
-        path: data/postgres/public-suppliers/2024-07-16/dados.csv
+        path: ../data/postgres/public-suppliers/2024-07-16/dados.csv
         keys: [supplier_id]
       - entity: territories
-        path: data/postgres/public-territories/2024-07-16/dados.csv
+        path: ../data/postgres/public-territories/2024-07-16/dados.csv
         keys: [territory_id]
       - entity: us_states
-        path: data/postgres/public-us_states/2024-07-16/dados.csv
+        path: ../data/postgres/public-us_states/2024-07-16/dados.csv
         keys: [state_id]
   - name: tap-postgres-tipo1
     inherit_from: tap-postgres
@@ -72,7 +72,7 @@ plugins:
     variant: meltanolabs
     pip_url: git+https://github.com/MeltanoLabs/target-csv.git
     config:
-      file_naming_scheme: data/csv/{datestamp}/dados.csv
+      file_naming_scheme: ../data/csv/{datestamp}/dados.csv
   - name: target-csv-tipo2
     inherit_from: target-csv
     variant: meltanolabs
@@ -80,7 +80,7 @@ plugins:
     config:
       validate_records: false
       add_record_metadata: false
-      file_naming_scheme: data/postgres/{stream_name}/{datestamp}/dados.csv
+      file_naming_scheme: ../data/postgres/{stream_name}/{datestamp}/dados.csv
       default_target_schema: public
       default_target_table: dados_table
   - name: target-postgres-tipo1
