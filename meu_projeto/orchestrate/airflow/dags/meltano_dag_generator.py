@@ -1,39 +1,50 @@
-from datetime import datetime
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-
-def tap_csv_to_target_csv_job():
-    print("Executing tap-csv-to-target-csv job")
-
-def tap_postgres_to_target_csv_job():
-    print("Executing tap-postgres-to-target-csv job")
-
-def tap_csv_to_target_postgres_job():
-    print("Executing tap-csv-to-target-postgres job")
-
-with DAG(
-    'meltano_jobs_dag',
-    default_args={'owner': 'airflow'},
-    description='Run Meltano jobs in sequence',
-    schedule_interval='@Daily',  
-    start_date=datetime(2024, 7, 11),
-    catchup=False,
-) as dag:
+from airflow.operators.bash_operator import BashOperator
+from datetime import datetime, timedelta
+import os
 
 
-    tap_csv_to_target_csv_task = PythonOperator(
-        task_id='tap_csv_to_target_csv',
-        python_callable=tap_csv_to_target_csv_job,
-    )
+default_args = {
+    "owner": "airflow",
+    "start_date": datetime(2023, 1, 1),
+    "depends_on_past": False,
+    "email": ["airflow@example.com"],
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
+}
 
-    tap_postgres_to_target_csv_task = PythonOperator(
-        task_id='tap_postgres_to_target_csv',
-        python_callable=tap_postgres_to_target_csv_job,
-    )
+dag = DAG("meltano_jobs", default_args=default_args, schedule_interval="@daily")
 
-    tap_csv_to_target_postgres_task = PythonOperator(
-        task_id='tap_csv_to_target_postgres',
-        python_callable=tap_csv_to_target_postgres_job,
-    )
+tap_csv_to_target_csv = BashOperator(
+    task_id='tap_csv_to_target_csv',
+    bash_command='cd /home/vinicius/code-challenge/meu_projeto && meltano run tap-csv-to-target-csv',
+    env={
+        "PATH": os.getenv("PATH"),
+        "MELTANO_PROJECT_ROOT": "/home/vinicius/code-challenge/meu_projeto",
+    },
+    dag=dag,
+)
 
-[tap_csv_to_target_csv_task, tap_postgres_to_target_csv_task] >> tap_csv_to_target_postgres_task
+tap_postgres_to_target_csv = BashOperator(
+    task_id='tap_postgres_to_target_csv',
+    bash_command='cd /home/vinicius/code-challenge/meu_projeto && meltano run tap-postgres-to-target-csv',
+    env={
+        "PATH": os.getenv("PATH"),
+        "MELTANO_PROJECT_ROOT": "/home/vinicius/code-challenge/meu_projeto",
+    },
+    dag=dag,
+)
+
+tap_csv_to_target_postgres = BashOperator(
+    task_id='tap_csv_to_target_postgres',
+    bash_command='cd /home/vinicius/code-challenge/meu_projeto && meltano run tap_csv_to_target_postgres',
+    env={
+        "PATH": os.getenv("PATH"),
+        "MELTANO_PROJECT_ROOT": "/home/vinicius/code-challenge/meu_projeto",
+    },
+    dag=dag,
+)
+
+[tap_csv_to_target_csv, tap_postgres_to_target_csv]>> tap_csv_to_target_postgres
