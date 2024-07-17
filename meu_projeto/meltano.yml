@@ -13,7 +13,7 @@ plugins:
     pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
     config:
       files:
-      - entity: order_details
+      - entity: order_details.csv
         path: ../data
         keys:
         - order_id
