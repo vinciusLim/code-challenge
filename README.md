@@ -1,5 +1,7 @@
 # Documentação do Desafio de Código Técnico da Indicium
 
+> Nota: esta alteração é um teste de fluxo de branch e Pull Request.
+
 ### Introdução
 
 O projeto abrange todas as etapas de um processo ETL (Extração, Transformação e Carga), desde a configuração inicial do banco de dados Northwind utilizando Docker para executar arquivos .sql, até o agendamento e monitoramento das tarefas de carregamento de dados, com Meltano como ferramenta de ETL e Airflow para o agendamento das tarefas.
